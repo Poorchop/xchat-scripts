@@ -39,7 +39,7 @@ def show_yt_info(info):
     "\0033\002:: [+]\002 %s likes " + \
     "\002\0034[-]\002 %s dislikes " + \
     "\0033\002::\002") % \
-          (info['title'], info['id'], info['views'], info['likes'], info['dislikes'])
+          (info['title'], info['id'], group(info['views']), group(info['likes']), group(info['dislikes']))
 
 def get_id_from_url(text):
     check = re.compile(r"(?:https?\://)?(?:\w+\.)?(?:youtube|youtu)(?:\.\w+){1,2}/")
@@ -47,7 +47,7 @@ def get_id_from_url(text):
     short = re.compile(r"(?:(?:https?\://)?(?:\w+\.)?(?:youtube|youtu)(?:\.\w+){1,2}/)([\w\-]+)")
     vid = ""
 
-    if re.search(check, text):
+    if check.search(text):
         normal = normal.search(text)
         short = short.search(text)
         if normal != None:
@@ -56,6 +56,9 @@ def get_id_from_url(text):
             vid = short.group(1)
 
     return vid
+
+def group(n):
+    return (','.join(re.findall(r"\d{1,3}", str(n)[::-1])))[::-1]
 
 def privmsg_cb(word, word_eol, userdata):
     id = get_id_from_url(word_eol[3])
@@ -69,6 +72,7 @@ def privmsg_cb(word, word_eol, userdata):
 
 def ytcmd_cb(word, word_eol, userdata):
     if len(word) < 2:
+        print "/yt <url> to get video info"
         return xchat.EAT_NONE
     id = get_id_from_url(word_eol[0])
     if len(id) == 0:
