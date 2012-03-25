@@ -2,11 +2,20 @@ import urllib
 import json
 import xchat
 import re
+import sys
 
 __module_name__        = "Get Youtube Video Info"
-__module_version__     = "0.2"
+__module_version__     = "0.3"
 __module_description__ = "Reads and displays video info from an URL."
 __module_author__      = "demi_alucard <alysson87@gmail.com>"
+
+# HACK: Set default encoding to UTF-8
+if (sys.getdefaultencoding() != "utf-8"):
+    oldout, olderr = sys.stdout, sys.stderr         # Backup stdout and stderr
+    reload(sys)                                     # This call resets stdout and stderr
+    sys.setdefaultencoding('utf-8')                 # Change encoding
+    sys.stdout = codecs.getwriter('utf-8')(oldout)  # Set old stdout
+    sys.stderr = codecs.getwriter('utf-8')(olderr)  # Set old stderr
 
 def get_yt_info(id):
     params                = {}
@@ -20,25 +29,39 @@ def get_yt_info(id):
 
     f = urllib.urlopen('http://gdata.youtube.com/feeds/api/videos?%s' % params)
     data = json.load(f)
+    if 'entry' not in data['feed']:
+        return {}
+    data = data['feed']['entry'][0]
 
     info = {}
-    info['id']        = id
-    info['title']     = data['feed']['entry'][0]['title']['$t']
-    info['views']     = data['feed']['entry'][0]['yt$statistics']['viewCount']
-    info['favorites'] = data['feed']['entry'][0]['yt$statistics']['favoriteCount']
-    info['likes']     = data['feed']['entry'][0]['yt$rating']['numLikes']
-    info['dislikes']  = data['feed']['entry'][0]['yt$rating']['numDislikes']
+    info['id']            = id
+    if 'title' in data:
+        info['title']     = data['title'].get('$t', 'Untitled')
+    else:
+        info['title']     = 'Untitled'
+    if 'yt$statistics' in data:
+        info['views']     = data['yt$statistics'].get('viewCount', 0)
+        info['favorites'] = data['yt$statistics'].get('favoriteCount', 0)
+    else:
+        info['views']     = 0
+        info['favorites'] = 0
+    if 'yt$rating' in data:
+        info['likes']     = data['yt$rating'].get('numLikes', 0)
+        info['dislikes']  = data['yt$rating'].get('numDislikes', 0)
+    else:
+        info['likes']     = 0
+        info['dislikes']  = 0
 
     return info
 
 def show_yt_info(info):
     print \
-    ("\0033\002::\003 YouTube\002 %s " + \
-    "\0033\002::\003 URL:\002 http://youtu.be/%s " + \
-    "\0033\002::\003 Views:\002 %s " + \
-    "\0033\002:: [+]\002 %s likes " + \
-    "\002\0034[-]\002 %s dislikes " + \
-    "\0033\002::\002") % \
+    (u"\0033\002::\003 YouTube\002 %s " + \
+    u"\0033\002::\003 URL:\002 http://youtu.be/%s " + \
+    u"\0033\002::\003 Views:\002 %s " + \
+    u"\0033\002:: [+]\002 %s likes " + \
+    u"\002\0034[-]\002 %s dislikes " + \
+    u"\0033\002::\002") % \
           (info['title'], info['id'], group(info['views']), group(info['likes']), group(info['dislikes']))
 
 def get_id_from_url(text):
@@ -86,3 +109,4 @@ def ytcmd_cb(word, word_eol, userdata):
 xchat.hook_command("yt", ytcmd_cb, help="/yt <url> to get video info")
 xchat.hook_server("PRIVMSG", privmsg_cb)
 
+print "\0034", __module_name__, __module_version__, "has been loaded\003"
