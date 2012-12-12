@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import urllib
 import json
 import xchat
@@ -8,14 +10,6 @@ __module_name__        = "Get Youtube Video Info"
 __module_version__     = "0.3"
 __module_description__ = "Reads and displays video info from an URL."
 __module_author__      = "demi_alucard <alysson87@gmail.com>"
-
-# HACK: Set default encoding to UTF-8
-if (sys.getdefaultencoding() != "utf-8"):
-    oldout, olderr = sys.stdout, sys.stderr         # Backup stdout and stderr
-    reload(sys)                                     # This call resets stdout and stderr
-    sys.setdefaultencoding('utf-8')                 # Change encoding
-    sys.stdout = codecs.getwriter('utf-8')(oldout)  # Set old stdout
-    sys.stderr = codecs.getwriter('utf-8')(olderr)  # Set old stderr
 
 def get_yt_info(id):
     params                = {}
@@ -55,14 +49,17 @@ def get_yt_info(id):
     return info
 
 def show_yt_info(info):
-    print \
-    (u"\0033\002::\003 YouTube\002 %s " + \
+    msg = u"\0033\002::\003 YouTube\002 %s " + \
     u"\0033\002::\003 URL:\002 http://youtu.be/%s " + \
     u"\0033\002::\003 Views:\002 %s " + \
     u"\0033\002:: [+]\002 %s likes " + \
     u"\002\0034[-]\002 %s dislikes " + \
-    u"\0033\002::\002") % \
-          (info['title'], info['id'], group(info['views']), group(info['likes']), group(info['dislikes']))
+    u"\0033\002::\002"
+
+    msg = (msg) % (info['title'], info['id'], group(info['views']), group(info['likes']), group(info['dislikes']))
+    msg = msg.encode('utf-8')
+
+    print(msg)
 
 def get_id_from_url(text):
     check = re.compile(r"(?:https?\://)?(?:\w+\.)?(?:youtube|youtu)(?:\.\w+){1,2}/")
