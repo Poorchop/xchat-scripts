@@ -5,13 +5,14 @@ import json
 import xchat
 import re
 import sys
+import threading, Queue
 
 __module_name__        = "Get Youtube Video Info"
 __module_version__     = "0.3"
 __module_description__ = "Reads and displays video info from an URL."
 __module_author__      = "demi_alucard <alysson87@gmail.com>"
 
-def get_yt_info(id):
+def get_yt_info(id, q):
     params                = {}
     params['v']           = '2.1'
     params['alt']         = 'json'
@@ -24,7 +25,8 @@ def get_yt_info(id):
     f = urllib.urlopen('http://gdata.youtube.com/feeds/api/videos?%s' % params)
     data = json.load(f)
     if 'entry' not in data['feed']:
-        return {}
+        q.put({})
+        return
     data = data['feed']['entry'][0]
 
     info = {}
@@ -46,7 +48,7 @@ def get_yt_info(id):
         info['likes']     = 0
         info['dislikes']  = 0
 
-    return info
+    q.put(info)
 
 def show_yt_info(info):
     msg = u"\0033\002::\003 YouTube\002 %s " + \
@@ -84,7 +86,9 @@ def privmsg_cb(word, word_eol, userdata):
     id = get_id_from_url(word_eol[3])
     if len(id) == 0:
         return xchat.EAT_NONE
-    info = get_yt_info(id)
+    q = Queue.Queue()
+    threading.Thread(target=get_yt_info, args=(id, q)).start()
+    info = q.get()
     if len(info) == 0:
         return xchat.EAT_NONE
     show_yt_info(info)
@@ -97,7 +101,9 @@ def ytcmd_cb(word, word_eol, userdata):
     id = get_id_from_url(word_eol[0])
     if len(id) == 0:
         return xchat.EAT_NONE
-    info = get_yt_info(id)
+    q = Queue.Queue()
+    threading.Thread(target=get_yt_info, args=(id, q)).start()
+    info = q.get()
     if len(info) == 0:
         return xchat.EAT_NONE
     show_yt_info(info)
