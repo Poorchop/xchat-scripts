@@ -1,13 +1,11 @@
-# -*- coding: utf-8 -*-
-
-import urllib
+import urllib.request, urllib.parse
 import json
 import xchat
 import re
 import sys
 
 __module_name__        = "Get Youtube Video Info"
-__module_version__     = "0.3"
+__module_version__     = "0.4"
 __module_description__ = "Reads and displays video info from an URL."
 __module_author__      = "demi_alucard <alysson87@gmail.com>"
 
@@ -19,10 +17,10 @@ def get_yt_info(id):
     params['restriction'] = '255.255.255.255'
     params['q']           = '"%s"' % id
     params['fields']      = 'entry[media:group/yt:videoid="%s"]' % id
-    params                = urllib.urlencode(params)
+    params                = urllib.parse.urlencode(params)
 
-    f = urllib.urlopen('http://gdata.youtube.com/feeds/api/videos?%s' % params)
-    data = json.load(f)
+    f = urllib.request.urlopen('http://gdata.youtube.com/feeds/api/videos?%s' % params)
+    data = json.loads(f.read().decode('utf-8'))
     if 'entry' not in data['feed']:
         return {}
     data = data['feed']['entry'][0]
@@ -57,9 +55,8 @@ def show_yt_info(info):
     u"\0033\002::\002"
 
     msg = (msg) % (info['title'], info['id'], group(info['views']), group(info['likes']), group(info['dislikes']))
-    msg = msg.encode('utf-8')
 
-    print(msg)
+    xchat.prnt(msg)
 
 def get_id_from_url(text):
     check = re.compile(r"(?:https?\://)?(?:\w+\.)?(?:youtube|youtu)(?:\.\w+){1,2}/")
@@ -92,7 +89,7 @@ def privmsg_cb(word, word_eol, userdata):
 
 def ytcmd_cb(word, word_eol, userdata):
     if len(word) < 2:
-        print "/yt <url> to get video info"
+        xchat.prnt("/yt <url> to get video info")
         return xchat.EAT_NONE
     id = get_id_from_url(word_eol[0])
     if len(id) == 0:
@@ -106,4 +103,4 @@ def ytcmd_cb(word, word_eol, userdata):
 xchat.hook_command("yt", ytcmd_cb, help="/yt <url> to get video info")
 xchat.hook_server("PRIVMSG", privmsg_cb)
 
-print "\0034", __module_name__, __module_version__, "has been loaded\003"
+print("\0034", __module_name__, __module_version__, "has been loaded\003")
